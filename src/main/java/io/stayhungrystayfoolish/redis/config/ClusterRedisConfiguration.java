@@ -50,6 +50,7 @@ public class ClusterRedisConfiguration {
     @Bean
     @ConditionalOnMissingBean(name = "{redisTemplate}")
     public RedisTemplate<Object, Object> redisTemplate(@Qualifier(value = "connectionFactory") RedisConnectionFactory redisConnectionFactory) {
+        logger.info("Initialization Cluster Redis RedisTemplate");
         RedisTemplate<Object, Object> template = new RedisTemplate<>();
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());

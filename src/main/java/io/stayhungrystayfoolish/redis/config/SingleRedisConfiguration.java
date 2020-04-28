@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,9 +38,12 @@ import java.io.Serializable;
 @ConditionalOnProperty(name = "spring.redis.type", havingValue = "single")
 public class SingleRedisConfiguration extends JCacheConfigurerSupport {
 
+    private final Logger logger = LoggerFactory.getLogger(SingleRedisConfiguration.class);
+
     @Bean
     @ConditionalOnMissingBean(name = "{redisTemplate}")
     public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+        logger.info("Initialization Single Redis RedisTemplate");
         RedisTemplate<Object, Object> template = new RedisTemplate<>();
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
