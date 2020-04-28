@@ -44,8 +44,8 @@ public class RedisResource {
         LinkedHashMap map = new LinkedHashMap<>();
         map.put("11", 11);
 
-        redisTemplate.opsForValue().set(1, map);
-        LinkedHashMap result = (LinkedHashMap) redisTemplate.opsForValue().get(1);
+        redisTemplate.opsForValue().set("1", map);
+        LinkedHashMap result = (LinkedHashMap) redisTemplate.opsForValue().get("1");
         System.out.println(result);
         return user;
     }
