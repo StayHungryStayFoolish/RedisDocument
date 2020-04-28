@@ -3,5 +3,21 @@ server:
 
 spring:
   redis:
+    type: single # cluster
     host: 127.0.0.1
     port: 6379
+    password:
+    cluster:
+      nodes:
+        -
+        -
+        -
+        -
+        -
+        -
+    jedis:
+      pool:
+        max-active: 8
+        max-wait: -1ms
+        min-idle: 0
+        max-idle: 8
