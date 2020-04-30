@@ -10,9 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -20,6 +24,7 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
@@ -32,19 +37,23 @@ import java.time.Duration;
  * @Description:
  * @Version: 1.0
  */
+@EnableCaching
+@ConditionalOnClass(RedisOperations.class)
+@EnableConfigurationProperties(RedisProperties.class)
 @Configuration
 @ConditionalOnProperty(name = "spring.redis.type", havingValue = "cluster")
 public class ClusterRedisConfiguration {
 
     private final Logger logger = LoggerFactory.getLogger(ClusterRedisConfiguration.class);
 
+    // user spring component
     @Autowired
-    private RedisClusterProperties clusterProperties;
+    private RedisProperties redisProperties;
 
     @Bean(name = "connectionFactory")
     public RedisConnectionFactory connectionFactory() {
         logger.debug("Configuring Redis Cluster .");
-        return new JedisConnectionFactory(new RedisClusterConfiguration(clusterProperties.getNodes()));
+        return new JedisConnectionFactory(new RedisClusterConfiguration(redisProperties.getCluster().getNodes()));
     }
 
     @Bean
