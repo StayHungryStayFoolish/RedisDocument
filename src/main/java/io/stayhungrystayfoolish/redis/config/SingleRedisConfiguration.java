@@ -6,14 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import io.lettuce.core.AbstractRedisClient;
-import io.lettuce.core.ClientOptions;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
-import io.lettuce.core.api.async.RedisAsyncCommands;
+import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
-import io.lettuce.core.resource.ClientResources;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,17 +22,12 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.jcache.config.JCacheConfigurerSupport;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.*;
-import org.springframework.data.redis.connection.lettuce.DefaultLettucePool;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettucePool;
-import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import redis.clients.jedis.Jedis;
 
 /**
  * @Author: Created by bonismo@hotmail.com on 2020/4/28 3:23 下午
@@ -61,6 +52,16 @@ public class SingleRedisConfiguration extends JCacheConfigurerSupport {
                 .withPassword(redisProperties.getPassword())
                 .build();
         return  RedisClient.create(redisUri);
+    }
+
+    @Bean(destroyMethod = "close")
+    public StatefulRedisConnection<String, String> connection(RedisClient redisClient) {
+        return redisClient.connect();
+    }
+
+    @Bean
+    public RedisCommands<String, String> commands(StatefulRedisConnection connection) {
+        return connection.sync();
     }
 
     @Bean
