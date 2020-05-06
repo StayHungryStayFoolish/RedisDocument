@@ -1,10 +1,10 @@
-package io.stayhungrystayfoolish.redis.stream;
+package io.stayhungrystayfoolish.redis.stream.cluster;
 
 import io.lettuce.core.Consumer;
 import io.lettuce.core.RedisBusyException;
 import io.lettuce.core.StreamMessage;
 import io.lettuce.core.XReadArgs;
-import io.lettuce.core.api.sync.RedisCommands;
+import io.lettuce.core.cluster.api.sync.RedisAdvancedClusterCommands;
 import io.lettuce.core.codec.StringCodec;
 import io.lettuce.core.output.StatusOutput;
 import io.lettuce.core.protocol.CommandArgs;
@@ -20,27 +20,28 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * @Author: Created by bonismo@hotmail.com on 2020/5/6 10:03 上午
+ * @Author: Created by bonismo@hotmail.com on 2020/5/6 7:32 下午
  * @Description:
  * @Version: 1.0
  */
 @RestController
 @RequestMapping("/api")
-public class RedisStreamConsumer {
+public class ClusterStreamConsumer {
 
-    private final Logger logger = LoggerFactory.getLogger(RedisStreamConsumer.class);
 
-    private final static String STREAMS_KEY = "STREAMS:test";
-    private final static String CONSUMER_NAME = "consumer_1";
+    private final Logger logger = LoggerFactory.getLogger(ClusterStreamConsumer.class);
 
-    private final RedisCommands<String, String> syncCommands;
+    private final static String STREAMS_KEY = "STREAMS_CLUSTER:test";
+    private final static String CONSUMER_NAME = "consumer_cluster_1";
 
-    public RedisStreamConsumer(RedisCommands<String, String> syncCommands) {
-        this.syncCommands = syncCommands;
+    private final RedisAdvancedClusterCommands<String, String> advancedClusterCommands;
+
+    public ClusterStreamConsumer(RedisAdvancedClusterCommands<String, String> advancedClusterCommands) {
+        this.advancedClusterCommands = advancedClusterCommands;
     }
 
-    @GetMapping("/streams/consumer/{groupName}")
-    public String consumerMessage(@PathVariable String groupName) {
+    @GetMapping("/cluster/streams/consumer/{groupName}")
+    public String clusterStreams(@PathVariable String groupName) {
         logger.info("Single Redis Consumer Message .");
         StringBuilder result = new StringBuilder();
         String status = null;
@@ -58,7 +59,7 @@ public class RedisStreamConsumer {
                 .add("MKSTREAM");
         logger.info("Commands : {}", args.toCommandString());
         try {
-            status = syncCommands.dispatch(CommandType.XGROUP, new StatusOutput<>(codec), args);
+            status = advancedClusterCommands.dispatch(CommandType.XGROUP, new StatusOutput<>(codec), args);
         } catch (RedisBusyException e) {
             logger.error(String.format("Group '%s' already exists .", groupName));
         }
@@ -67,7 +68,7 @@ public class RedisStreamConsumer {
 
         // 2. Read Stream Message
         while (true) {
-            List<StreamMessage<String, String>> messages = syncCommands.xreadgroup(
+            List<StreamMessage<String, String>> messages = advancedClusterCommands.xreadgroup(
                     Consumer.from(groupName, CONSUMER_NAME),
                     XReadArgs.StreamOffset.lastConsumed(STREAMS_KEY));
 
@@ -76,11 +77,10 @@ public class RedisStreamConsumer {
                     logger.info("Consumer Message : {}", message);
                     logger.info("Consumer Message Id : {}", message.getId());
                     result.append(message);
-                    syncCommands.xack(STREAMS_KEY, groupName, message.getId());
+                    advancedClusterCommands.xack(STREAMS_KEY, groupName, message.getId());
                 }
             }
             return result.toString();
         }
-
     }
 }

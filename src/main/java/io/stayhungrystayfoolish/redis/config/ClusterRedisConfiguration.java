@@ -6,6 +6,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.RedisURI;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
+import io.lettuce.core.cluster.ClusterClientOptions;
+import io.lettuce.core.cluster.ClusterTopologyRefreshOptions;
+import io.lettuce.core.cluster.RedisClusterClient;
+import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
+import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands;
+import io.lettuce.core.cluster.api.sync.RedisAdvancedClusterCommands;
+import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +33,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.RedisClusterConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -31,6 +44,9 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Author: Created by bonismo@hotmail.com on 2020/4/28 2:39 下午
@@ -53,8 +69,57 @@ public class ClusterRedisConfiguration {
     @Bean(name = "connectionFactory")
     public RedisConnectionFactory connectionFactory() {
         logger.debug("Configuring Redis Cluster .");
-        return new JedisConnectionFactory(new RedisClusterConfiguration(redisProperties.getCluster().getNodes()));
+        return new LettuceConnectionFactory(new RedisClusterConfiguration(redisProperties.getCluster().getNodes()));
     }
+
+    @Bean
+    public RedisClusterClient redisClusterClient(RedisConnectionFactory redisConnectionFactory) {
+        List<RedisURI> redisURIS = new ArrayList<>();
+        List<String> nodes = redisProperties.getCluster().getNodes();
+        for (String node : nodes) {
+            redisURIS.add(configRedisURI(node));
+        }
+        RedisClusterClient redisClusterClient = RedisClusterClient.create(redisURIS);
+        ClusterTopologyRefreshOptions topologyRefreshOptions = ClusterTopologyRefreshOptions.builder()
+                .enableAdaptiveRefreshTrigger(ClusterTopologyRefreshOptions.RefreshTrigger.MOVED_REDIRECT, ClusterTopologyRefreshOptions.RefreshTrigger.PERSISTENT_RECONNECTS)
+                .adaptiveRefreshTriggersTimeout(30, TimeUnit.SECONDS)
+                .build();
+        redisClusterClient.setOptions(
+                ClusterClientOptions.
+                        builder().
+                        topologyRefreshOptions(topologyRefreshOptions).
+                        build());
+        return redisClusterClient;
+    }
+
+    private RedisURI configRedisURI(String node) {
+        String host = node.split(":")[0];
+        int port = Integer.parseInt(node.split(":")[1]);
+        return RedisURI.Builder.redis(host, port)
+                .withPassword(redisProperties.getPassword())
+                .build();
+    }
+
+    @Bean(destroyMethod = "close")
+    public StatefulRedisClusterConnection<String, String> connection(RedisClusterClient redisClient) {
+        return redisClient.connect();
+    }
+
+    @Bean
+    public RedisAdvancedClusterCommands<String, String> clusterAdvanceCommands(StatefulRedisClusterConnection connection) {
+        return connection.sync();
+    }
+
+    @Bean
+    public RedisClusterCommands<String, String> clusterCommands(StatefulRedisClusterConnection connection) {
+        return connection.sync();
+    }
+
+    @Bean
+    public RedisClusterAsyncCommands<String, String> commands(StatefulRedisClusterConnection connection) {
+        return connection.async();
+    }
+
 
     @Bean
     @ConditionalOnMissingBean(name = "{redisTemplate}")
