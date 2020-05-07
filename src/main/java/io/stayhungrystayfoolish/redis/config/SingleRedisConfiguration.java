@@ -59,7 +59,7 @@ public class SingleRedisConfiguration extends JCacheConfigurerSupport {
         return redisClient.connect();
     }
 
-    @Bean
+    @Bean(name = "redisCommands")
     public RedisCommands<String, String> commands(StatefulRedisConnection connection) {
         return connection.sync();
     }

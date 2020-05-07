@@ -3,7 +3,7 @@ server:
 
 spring:
   redis:
-    type: cluster # single # cluster
+    type: single # single # cluster
     host: 127.0.0.1
     port: 6379
     password:

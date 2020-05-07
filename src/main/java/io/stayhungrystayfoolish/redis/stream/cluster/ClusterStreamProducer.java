@@ -10,7 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * @Author: Created by bonismo@hotmail.com on 2020/5/6 7:33 下午
- * @Description:
+ * @Description: 1. use @ConditionalOnBean(name = "redisCommands")
+ *  *                  when spring.redis.type = single ,this api can access (type = cluster can not access)
+ *  *            2. use @Autowired(required = false) when spring.redis.type = single / cluster
+ *  *                  this api can access ,but only type is single can works (type = cluster can access but not work)
  * @Version: 1.0
  */
 @RestController

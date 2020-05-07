@@ -105,17 +105,17 @@ public class ClusterRedisConfiguration {
         return redisClient.connect();
     }
 
-    @Bean
+    @Bean(name = "redisAdvancedClusterCommands")
     public RedisAdvancedClusterCommands<String, String> clusterAdvanceCommands(StatefulRedisClusterConnection connection) {
         return connection.sync();
     }
 
-    @Bean
+    @Bean(name = "redisClusterCommands")
     public RedisClusterCommands<String, String> clusterCommands(StatefulRedisClusterConnection connection) {
         return connection.sync();
     }
 
-    @Bean
+    @Bean(name = "redisClusterAsyncCommands")
     public RedisClusterAsyncCommands<String, String> commands(StatefulRedisClusterConnection connection) {
         return connection.async();
     }

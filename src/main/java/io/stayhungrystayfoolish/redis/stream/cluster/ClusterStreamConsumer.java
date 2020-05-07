@@ -4,6 +4,7 @@ import io.lettuce.core.Consumer;
 import io.lettuce.core.RedisBusyException;
 import io.lettuce.core.StreamMessage;
 import io.lettuce.core.XReadArgs;
+import io.lettuce.core.api.sync.BaseRedisCommands;
 import io.lettuce.core.cluster.api.sync.RedisAdvancedClusterCommands;
 import io.lettuce.core.codec.StringCodec;
 import io.lettuce.core.output.StatusOutput;
@@ -12,6 +13,7 @@ import io.lettuce.core.protocol.CommandKeyword;
 import io.lettuce.core.protocol.CommandType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,7 +23,10 @@ import java.util.List;
 
 /**
  * @Author: Created by bonismo@hotmail.com on 2020/5/6 7:32 下午
- * @Description:
+ * @Description:    1. use @ConditionalOnBean(name = "redisCommands")
+ *  *                       when spring.redis.type = single ,this api can access (type = cluster can not access)
+ *  *               2. use @Autowired(required = false) when spring.redis.type = single / cluster
+ *  *                       this api can access ,but only type is single can works (type = cluster can access but not work)
  * @Version: 1.0
  */
 @RestController
@@ -36,7 +41,7 @@ public class ClusterStreamConsumer {
 
     private final RedisAdvancedClusterCommands<String, String> advancedClusterCommands;
 
-    public ClusterStreamConsumer(RedisAdvancedClusterCommands<String, String> advancedClusterCommands) {
+    public ClusterStreamConsumer(@Autowired(required = false) RedisAdvancedClusterCommands<String, String> advancedClusterCommands) {
         this.advancedClusterCommands = advancedClusterCommands;
     }
 
