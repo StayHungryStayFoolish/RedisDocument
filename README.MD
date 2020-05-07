@@ -2,7 +2,7 @@
 
 ## Redis Cluster Install
 
-- ENV
+- Env
     
     - Mac OS
     
