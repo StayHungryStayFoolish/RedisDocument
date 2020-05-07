@@ -37,7 +37,7 @@ public class RedisStreamConsumer {
 
     private final Logger logger = LoggerFactory.getLogger(RedisStreamConsumer.class);
 
-    private final static String STREAMS_KEY = "STREAMS:test";
+    private final static String STREAMS_KEY = "STREAMS_SINGLE:test";
     private final static String CONSUMER_NAME = "consumer_1";
 
     private final RedisCommands<String, String> syncCommands;
@@ -57,6 +57,9 @@ public class RedisStreamConsumer {
         // "ERR The XGROUP subcommand requires the key to exist.
         // Note that for CREATE you may want to use the MKSTREAM option to create an empty stream automatically."
         StringCodec codec = StringCodec.UTF8;
+
+        // specify $, only new message arriving in the stream from now on will be provided to consumers in the group.
+        // specify 0, instead the consumer group will consume all the messages in the stream history to start with.
         CommandArgs<String, String> args = new CommandArgs<>(codec)
                 .add(CommandKeyword.CREATE)
                 .add(STREAMS_KEY)

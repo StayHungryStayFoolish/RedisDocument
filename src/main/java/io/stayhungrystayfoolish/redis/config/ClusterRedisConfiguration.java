@@ -72,6 +72,10 @@ public class ClusterRedisConfiguration {
         return new LettuceConnectionFactory(new RedisClusterConfiguration(redisProperties.getCluster().getNodes()));
     }
 
+    /**
+     *  Enabling adaptive cluster topology view updates
+     *  @Description: https://github.com/lettuce-io/lettuce-core/wiki/Redis-Cluster
+     */
     @Bean
     public RedisClusterClient redisClusterClient(RedisConnectionFactory redisConnectionFactory) {
         List<RedisURI> redisURIS = new ArrayList<>();

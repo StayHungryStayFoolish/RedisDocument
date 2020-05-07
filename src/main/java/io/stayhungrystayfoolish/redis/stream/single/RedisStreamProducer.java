@@ -28,7 +28,7 @@ public class RedisStreamProducer {
 
     private final Logger logger = LoggerFactory.getLogger(RedisStreamProducer.class);
 
-    private final static String STREAMS_KEY = "STREAMS:test";
+    private final static String STREAMS_KEY = "STREAMS_SINGLE:test";
 
     private final RedisTemplate redisTemplate;
 
@@ -40,8 +40,7 @@ public class RedisStreamProducer {
     }
 
 
-    @GetMapping("/streams/producer/{count}")
-
+    @GetMapping("/single/streams/producer/{count}")
     public String streamMessage(@PathVariable int count) {
         logger.info("Single Redis Producer Message : {}", count);
         StringBuffer result = new StringBuffer();
