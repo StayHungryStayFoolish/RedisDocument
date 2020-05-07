@@ -35,6 +35,7 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisClusterConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
@@ -69,7 +70,9 @@ public class ClusterRedisConfiguration {
     @Bean(name = "connectionFactory")
     public RedisConnectionFactory connectionFactory() {
         logger.debug("Configuring Redis Cluster .");
-        return new LettuceConnectionFactory(new RedisClusterConfiguration(redisProperties.getCluster().getNodes()));
+        RedisClusterConfiguration configuration = new RedisClusterConfiguration(redisProperties.getCluster().getNodes());
+        configuration.setPassword(RedisPassword.of(redisProperties.getPassword()));
+        return new LettuceConnectionFactory(configuration);
     }
 
     /**

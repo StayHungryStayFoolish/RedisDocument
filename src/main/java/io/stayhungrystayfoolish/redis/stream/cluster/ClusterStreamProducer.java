@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -64,6 +65,10 @@ public class ClusterStreamProducer {
             result.append(format);
         }
         logger.info("Producer Result : \n{}", result);
+        List<String> keys = advancedClusterCommands.keys("*");
+        for (String key : keys) {
+            logger.info("Key : {}", key);
+        }
         return result.toString();
     }
 }
