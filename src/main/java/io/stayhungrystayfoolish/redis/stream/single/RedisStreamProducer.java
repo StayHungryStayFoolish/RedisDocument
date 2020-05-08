@@ -1,5 +1,8 @@
-package io.stayhungrystayfoolish.redis.stream;
+package io.stayhungrystayfoolish.redis.stream.single;
 
+import io.lettuce.core.RedisFuture;
+import io.lettuce.core.SetArgs;
+import io.lettuce.core.api.async.RedisStringAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,16 +13,18 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.security.PermitAll;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @Author: Created by bonismo@hotmail.com on 2020/4/30 3:42 下午
- * @Description:    1. use @ConditionalOnBean(name = "redisCommands")
- *  *                       when spring.redis.type = single ,this api can access (type = cluster can not access)
- *  *               2. use @Autowired(required = false) when spring.redis.type = single / cluster
- *  *                       this api can access ,but only type is single can works (type = cluster can access but not work)
+ * @Description: 1. use @ConditionalOnBean(name = "redisCommands")
+ * *                       when spring.redis.type = single ,this api can access (type = cluster can not access)
+ * *               2. use @Autowired(required = false) when spring.redis.type = single / cluster
+ * *                       this api can access ,but only type is single can works (type = cluster can access but not work)
  * @Version: 1.0
  */
 @RestController
@@ -33,15 +38,17 @@ public class RedisStreamProducer {
     private final RedisTemplate redisTemplate;
 
     private final RedisCommands<String, String> syncCommands;
+    private final RedisStringAsyncCommands<String, String> asyncCommands;
 
-    public RedisStreamProducer(RedisTemplate redisTemplate,@Autowired(required = false) RedisCommands<String, String> syncCommands) {
+    public RedisStreamProducer(RedisTemplate redisTemplate, @Autowired(required = false) RedisCommands<String, String> syncCommands, @Autowired(required = false) RedisStringAsyncCommands<String, String> asyncCommands) {
         this.redisTemplate = redisTemplate;
         this.syncCommands = syncCommands;
+        this.asyncCommands = asyncCommands;
     }
 
 
     @GetMapping("/single/streams/producer/{count}")
-    public String streamMessage(@PathVariable int count) {
+    public String singleStreamsMessageProducer(@PathVariable int count) {
         logger.info("Single Redis Producer Message : {}", count);
         StringBuffer result = new StringBuffer();
 
@@ -60,5 +67,13 @@ public class RedisStreamProducer {
         }
         logger.info("Producer Result : \n{}", result);
         return result.toString();
+    }
+
+    @GetMapping("/single/async/{key}/{value}")
+    public String singleAsync(@PathVariable String key, @PathVariable String value) throws ExecutionException, InterruptedException {
+        SetArgs args = new SetArgs();
+        asyncCommands.set(key, value);
+        RedisFuture<String> redisFuture = asyncCommands.get(key);
+        return redisFuture.get();
     }
 }

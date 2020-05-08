@@ -46,7 +46,7 @@ public class ClusterStreamConsumer {
     }
 
     @GetMapping("/cluster/streams/consumer/{groupName}")
-    public String clusterStreams(@PathVariable String groupName) {
+    public String clusterStreamsConsumer(@PathVariable String groupName) {
         logger.info("Single Redis Consumer Message .");
         StringBuilder result = new StringBuilder();
         String status = null;

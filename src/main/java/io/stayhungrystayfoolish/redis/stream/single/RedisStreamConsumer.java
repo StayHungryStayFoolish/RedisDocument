@@ -47,7 +47,7 @@ public class RedisStreamConsumer {
     }
 
     @GetMapping("/single/streams/consumer/{groupName}")
-    public String consumerMessage(@PathVariable String groupName) {
+    public String singleStreamsConsumerMessage(@PathVariable String groupName) {
         logger.info("Single Redis Consumer Message .");
         StringBuilder result = new StringBuilder();
         String status = null;

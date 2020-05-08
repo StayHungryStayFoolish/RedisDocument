@@ -9,6 +9,7 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisStringAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +58,11 @@ public class SingleRedisConfiguration extends JCacheConfigurerSupport {
     @Bean(destroyMethod = "close")
     public StatefulRedisConnection<String, String> connection(RedisClient redisClient) {
         return redisClient.connect();
+    }
+
+    @Bean
+    public RedisStringAsyncCommands<String,String> asyncCommands(StatefulRedisConnection connection) {
+        return connection.async();
     }
 
     @Bean(name = "redisCommands")

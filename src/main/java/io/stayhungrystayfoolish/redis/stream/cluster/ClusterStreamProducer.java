@@ -48,7 +48,7 @@ public class ClusterStreamProducer {
     }
 
     @GetMapping("/cluster/streams/producer/{count}")
-    public String streamMessage(@PathVariable int count) {
+    public String clusterStreamsMessageProducer(@PathVariable int count) {
         logger.info("Single Redis Producer Message : {}", count);
         StringBuffer result = new StringBuffer();
 
