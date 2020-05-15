@@ -1,5 +1,3 @@
-[TOC]
-
 # Redis 
 
 ## Redis Single Install
@@ -172,6 +170,7 @@
 #### 1.5二进制位（BitMap）
 
 -   **BitMap**
+
     -   **使用一个 `bit` 标记一个元素对应的`value`，`Key`即是该元素。**
         -   存储一个数组`[2,4,7]`
             -   1.  计算机分配一个`byte`，初始化为8个为`0`的`bit`。
@@ -185,3 +184,127 @@
         -   增加一个元素`20`,使数据变为`[2,4,7,20]`。
             -   如果现有数组要增加元素，并且元素大于7，则再分配字节，并且`offset`仍然`从右向左`依次标记。例如增加20，则分配三个字节，分别是`buf[0]`、`buf[1]`、`buf[2]`，在`buf[2]`的`offset`对应元素标记为`1`。其中`buf[1]`的所有元素肯定为`0`。
             -   ![BitMap-add](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/bitmap-capacity.jpg?raw=true)
+
+-   **常用命令**
+
+    ```bash
+    # 对 key 所存储的字符串值（bit）按照指定的 offset 进行标记（标记为0或1）
+    # 实际操作的是每个字节对应的二进制值
+    SETBIT key offset value
+    
+    # 获取该 key 对应的 offset 的 bit 值
+    GETBIT key offset
+    
+    # 返回二进制 bit 值为 1 的数量
+    BITCOUNT key [start end]
+    
+    # 返回指定范围二进制第一个 bit 值的位置
+    BITPOS key bit [start] [end]
+    
+    # 对 一个或多个 key 进行位运算，并将结果保存在 destkey 上
+    # operation 支持以下四种操作任意一种：
+    #	AND，与（&）  ：对应位都为1，结果为1
+    #	OR，或（|）   ：对应位有一个为1，结果为1
+    #	XOR，异或（^） ：对应位不同时，结果为1
+    #	NOT，非（~）   ：一元操作，取反值(只能对一个 key 操作，不同于上述三种)
+    BITOP operation destkey key [key ...]
+    ```
+
+-   **演示**
+
+    -   准备工作：
+
+        -   ascii 码表
+
+            ![ascii](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/ascii.jpg?raw=true)
+
+        -   [二进制计算器]([https://cn.calcuworld.com/%E4%BA%8C%E8%BF%9B%E5%88%B6%E8%AE%A1%E7%AE%97%E5%99%A8](https://cn.calcuworld.com/二进制计算器))（该网站计算的值如果不够8位，需要在高位`左侧`补齐0）
+
+    -   操作 `BitMap` 设置一个字符串
+
+        ```bash
+        # 操作 BitMap 使其值为十进制的 1
+        127.0.0.1:6379> SETBIT k1 7 1  # 0000 0001 
+        (integer) 0
+        127.0.0.1:6379> get k1
+        "\x01"
+        
+        # 操作 BitMap 使其值为 a，在 ascii 对应的十进制为 97，用二进制表示为：01100001
+        127.0.0.1:6379> SETBIT k2 0 0
+        (integer) 0
+        127.0.0.1:6379> SETBIT k2 1 1
+        (integer) 0
+        127.0.0.1:6379> SETBIT k2 2 1
+        (integer) 0
+        127.0.0.1:6379> SETBIT k2 3 0
+        (integer) 0
+        127.0.0.1:6379> SETBIT k2 4 0
+        (integer) 0
+        127.0.0.1:6379> SETBIT k2 5 0
+        (integer) 0
+        127.0.0.1:6379> SETBIT k2 6 0
+        (integer) 0
+        127.0.0.1:6379> SETBIT k2 7 1
+        (integer) 0
+        127.0.0.1:6379> get k2
+        "a"
+        
+        # 操作 BitMap 的 k2 的值，使 a 更改为 b，
+        # 在 ascii 对应的 a 十进制为 97，用二进制表示为：01100001
+        # 在 ascii 对应的 b 十进制为 98，用二进制表示为：01100010
+        127.0.0.1:6379> SETBIT k2 7 0
+        (integer) 1
+        127.0.0.1:6379> SETBIT k2 6 1
+        (integer) 0
+        127.0.0.1:6379> get k2
+        "b"
+        
+        # 统计用户登录登录次数，id 为 1000，1001 的两个用户在 20200515、20200516 时间内登录
+        127.0.0.1:6379> SETBIT 1000 20200515 1
+        (integer) 0
+        127.0.0.1:6379> SETBIT 1001 20200515 1
+        (integer) 0
+        127.0.0.1:6379> SETBIT 1000 20200516 1
+        (integer) 0
+        127.0.0.1:6379> BITCOUNT 1000
+        (integer) 2
+        
+        # 统计任意时间范围内用户活跃情况，id 为 1000，1001，1002 的三个用户分别在 20200514、20200514 登录，最后统计两天内活跃人数为 3
+        127.0.0.1:6379> SETBIT 20200514 1000 1
+        (integer) 0
+        127.0.0.1:6379> SETBIT 20200514 1001 1
+        (integer) 0
+        127.0.0.1:6379> SETBIT 20200514 1002 1
+        (integer) 0
+        127.0.0.1:6379> SETBIT 20200515 1000 1
+        (integer) 0
+        127.0.0.1:6379> SETBIT 20200515 1001 1
+        (integer) 0
+        127.0.0.1:6379> BITOP or result 20200514 20200515
+        (integer) 126
+        127.0.0.1:6379> BITCOUNT result
+        (integer) 3
+        127.0.0.1:6379>
+        ```
+
+        
+
+-   **使用场景**（用户 id 只能是数字类型）
+
+    -   统计任意时间内用户登录次数
+        -   SETBIT `user:id` time 1
+        -   BITCOUNT `user:id`
+    -   统计用户登录在某一时间段内活跃情况
+        -   SETBIT `time` user-id 1
+        -   BIETOP OR  result time1 time2
+        -   BITCOUNT result
+
+-   **SETBIT 和 GETBIT 的底层原理**
+
+    -   `Redis` 的 `SETBIT`命令存储二进制时，采用的`逆序存储`，主要目的是`扩展字节数据时，不再需要移动数据`。
+
+### 2. Hash
+
+1.  **List**
+2.  **Set**
+3.  **ZSet(Sorted Set)**
