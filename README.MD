@@ -301,10 +301,103 @@
 
 -   **SETBIT 和 GETBIT 的底层原理**
 
-    -   `Redis` 的 `SETBIT`命令存储二进制时，采用的`逆序存储`，主要目的是`扩展字节数据时，不再需要移动数据`。
+    -   `Redis` 的 `SETBIT` 命令存储`BitMap`时，采用的`逆序存储`，该逆序顺序对于用户来讲是无感知的。主要目的是`扩展字节数据时，不再需要移动数据`。
 
-### 2. Hash
+    -   以下内容摘抄自**黄健宏的《Redis 设计与实现》** 章节。
+
+    -   `Redis`使用字符串对象保存位数组。因为字符串对象使用的`SDS`数据结构是二进制安全的。
+
+        -   redisObject.type的值为REDIS_STRING，表示这是一个字符串对象。
+        -   sdshdr.len的值为1，表示这个SDS保存了一个一字节长的位数组。
+        -   buf数组中的buf[0]字节保存了一字节长的位数组。
+        -   buf数组中的buf[1]字节保存了SDS程序自动追加到值的末尾的空字符'\0'。
+
+        ![SDS-Structure](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/bitmap-structure.jpg?raw=true)
+
+        -   存储一个`字节`的位数组：`0100 1101`，`Redis`在保存数组顺序时，与我们书写顺序时完全相反的。也就是`逆序存储`，在数组中的表示为：`1011 0010`。**注意：数组索引顺序依然是从左到右，不是逆序存储的时候采用了逆序索引，这点在后续会明确解释。**
+
+            
+
+            ![SDS-Structure](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/bitmap-structure-1.jpg?raw=true)
+
+        -   存储多个`字节`的位数组：`1111 0000 1100 0011 1010 0101`，在 `buf数组中`表示为：`1010 0101 1100 0011 0000 1111`。
+
+            ![SDS-Structure](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/bitmap-structure-2.jpg?raw=true)
+
+        -   `GETBIT <bitarray> <offset>` 命令实现，复杂度为`O(1)`
+
+            -   1.**byte = offset ÷ 8 并向下取整（byte 值是图22-3的 buf[0]、buf[1]、buf[2]  ）**
+
+                -   byte 值记录了`offset` 指定的二进制位保存在位数组的哪个字节。
+
+            -   2.**bit = ( offset mod 8 ) + 1 **
+
+                -   bit 值记录了`offset`指定的二进制位中字节的第几个位置（**不是索引，是位置**）。
+
+            -   3.根据 `byte` 和 `bit` 值，在位数组 `bitarray` 中定位 `offset` 指定的二进制位，返回该位上的值。
+
+            -   `GETBIT <bitarray> 3`
+
+                ![GETBIT-3](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/GETBIT-3.jpg?raw=true)
+
+            -   `GETBIT <bitarray> 10`
+
+                ![GETBIT-10](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/GETBIT-10.jpg?raw=true)
+
+        -   `SETBIT <bitarray> <offset> <value>` 命令实现，复杂度为`O(1)`
+
+            -   1.**len = ( offset ÷ 8 ) + 1 **
+
+                -   len 值记录了保存`offset`指定的二进制位需要多少字节（计算 bug[] ）
+
+            -   2.检查 `bitarray` 键保存的位数组**(sdshdr)**的长度是否小于 len。
+
+                -   2.1 如果小于 len，则需要扩展字节。`sdshdr` 空间预分配策略会额外多分配 `len` 个字节的未使用空间，再加上为保存空字符而额外分配的1字节，及扩展后的字节为：**( len × 2 ) + 1**
+
+            -   3.**byte = offset ÷ 8 并向下取整**
+
+                -   byte 值记录了`offset` 指定的二进制位保存在位数组的哪个字节。
+
+            -   4.**bit = ( offset mod 8 ) + 1**
+
+                -   bit 值记录了`offset`指定的二进制位中字节的第几个位置（**不是索引，是位置**）。
+
+            -   5.根据 **byte** 和 **bit** 值，在 `bitarray` 键保存的位数组中定位`offset`指定的二进制位。
+
+                -   首先将指定的二进制位上当前值保存在 `oldvalue` 变量。
+                -   然后将新值 `value` 设置为二进制位的值。
+
+            -   6.返回 `oldvalue` 变量值。
+
+            -   `SETBIT <bitarray> 1 1` 无需扩展字节
+
+                ![SETBIT-1](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/SETBIT-1.jpg?raw=true)
+
+                ![SETBIE-1-1](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/SETBIT-1-1.jpg?raw=true)
+
+            -   `SETBIT <bitarray> 12 1`需扩展字节
+
+                ![SETBIT-12](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/SETBIT-12.jpg?raw=true)
+
+                ![SETBIT-12-1](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/SETBIE-12-1.jpg?raw=true)
+
+            -   **SETBIT 如果采用正常书写顺序保存，在每次扩展buf数组之后，程序都需要将位数组已有的位进行移动，然后才能执行写入操作，这比SETBIT命令目前的实现方式要复杂，并且移位带来的CPU时间消耗也会影响命令的执行速度。对位数组0100 1101执行命令SETBIT ＜bitarray＞ 12 1，将值改为0001 0000 0100 1101的整个过程。如下图。**
+
+                ![SETBIT-ORDER](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/SETBIE-12-3.jpg?raw=true)
+
+            -   **关于`逆序存储` 的疑问及解释，如果根据上文的逆序存储方式进行验证，会出现以下几个疑问。最后的 Redis 源码解释了该问题，通过 bit = 7 - ( bitoffset & 0x7 ) 计算，实际上的 setbitCommand 操作将 0 1 2 3 4 5 6 7 的操作倒转为了 7 6 5 4 3 2 1 0。对于用户来讲，该操作是无感知的，所以当验证逆序存储是，就会出现了下边几个疑问。**
+
+                ![Question-1](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/bitmap-1.jpg?raw=true)
+
+                ![Question-2](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/bitmap-2.jpg?raw=true)
+
+                ![Question-3](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/%20bitmap-3.png?raw=true)
+
+                ![Reverse-Code](https://github.com/StayHungryStayFoolish/Images-Blog/blob/master/redis/bitmap-reverse.png?raw=true)
+
+###  2. Hash
 
 1.  **List**
 2.  **Set**
 3.  **ZSet(Sorted Set)**
+
