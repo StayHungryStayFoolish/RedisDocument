@@ -330,7 +330,7 @@
 
                 -   byte 值记录了`offset` 指定的二进制位保存在位数组的哪个字节。
 
-            -   2.**bit = ( offset mod 8 ) + 1 **
+            -   2.**bit = ( offset mod 8 ) + 1**
 
                 -   bit 值记录了`offset`指定的二进制位中字节的第几个位置（**不是索引，是位置**）。
 
@@ -346,7 +346,7 @@
 
         -   `SETBIT <bitarray> <offset> <value>` 命令实现，复杂度为`O(1)`
 
-            -   1.**len = ( offset ÷ 8 ) + 1 **
+            -   1.**len = ( offset ÷ 8 ) + 1**
 
                 -   len 值记录了保存`offset`指定的二进制位需要多少字节（计算 bug[] ）
 
