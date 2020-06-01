@@ -19,6 +19,13 @@
         <relativePath/>
     </parent>
 
+    <repositories>
+        <repository>
+            <id>snapshots-repo</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -54,11 +61,32 @@
 
         <!-- Caused by: java.lang.ClassNotFoundException: redis.clients.jedis.util.SafeEncoder-->
         <!-- use 2.9.1 or 3.0.0 -->
+<!--        <dependency>-->
+<!--            <groupId>redis.clients</groupId>-->
+<!--            <artifactId>jedis</artifactId>-->
+<!--            <version>2.9.1</version>-->
+<!--        </dependency>-->
+
+        <!--  use RedisBloom -->
+        <!-- https://github.com/RedisBloom/JRedisBloom -->
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
-            <version>2.9.1</version>
+            <version>3.1.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.redislabs</groupId>
+            <artifactId>jrebloom</artifactId>
+            <version>1.2.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.redislabs</groupId>
+            <artifactId>jrebloom</artifactId>
+            <version>2.0.0-SNAPSHOT</version>
+        </dependency>
+
     </dependencies>
 
     <build>
