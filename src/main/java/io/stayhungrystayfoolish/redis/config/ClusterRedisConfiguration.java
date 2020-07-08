@@ -17,6 +17,9 @@ import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
 import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands;
 import io.lettuce.core.cluster.api.sync.RedisAdvancedClusterCommands;
 import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +47,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -76,8 +81,9 @@ public class ClusterRedisConfiguration {
     }
 
     /**
-     *  Enabling adaptive cluster topology view updates
-     *  @Description: https://github.com/lettuce-io/lettuce-core/wiki/Redis-Cluster
+     * Enabling adaptive cluster topology view updates
+     *
+     * @Description: https://github.com/lettuce-io/lettuce-core/wiki/Redis-Cluster
      */
     @Bean
     public RedisClusterClient redisClusterClient(RedisConnectionFactory redisConnectionFactory) {
@@ -176,4 +182,17 @@ public class ClusterRedisConfiguration {
                 .build();
         return cacheManager;
     }
+
+    /**
+     * 可以不在此处配置 bean，直接使用就可以。
+     * @return
+     * @throws IOException
+     */
+//    @Bean
+//    public RedissonClient redissonClient() throws IOException {
+//        Config config = Config.fromYAML(new File("redisson.yml"));
+//        RedissonClient client = Redisson.create(config);
+//        Redisson redisson = (Redisson) Redisson.create(config);
+//        return client;
+//    }
 }

@@ -1,0 +1,11 @@
+server:
+  port: 8080
+
+spring:
+  redis:
+    type: single # single # cluster
+    host: 127.0.0.1
+    port: 63791111
+    password:
+    redisson:
+      config: classpath:redisson.yml

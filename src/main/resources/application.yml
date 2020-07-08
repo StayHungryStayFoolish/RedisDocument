@@ -3,21 +3,23 @@ server:
 
 spring:
   redis:
-    type: cluster # single # cluster
+    type: single # single # cluster
     host: 127.0.0.1
     port: 6379
     password:
-    cluster:
-      nodes:
-        - 127.0.0.1:7000
-        - 127.0.0.1:7001
-        - 127.0.0.1:7002
-        - 127.0.0.1:7003
-        - 127.0.0.1:7004
-        - 127.0.0.1:7005
-    lettuce:
-      pool:
-        max-active: 8
-        max-wait: -1
-        min-idle: 0
-        max-idle: 8
+    redisson:
+      config: classpath:redisson.yml
+#    cluster:
+#      nodes:
+#        - 127.0.0.1:7000
+#        - 127.0.0.1:7001
+#        - 127.0.0.1:7002
+#        - 127.0.0.1:7003
+#        - 127.0.0.1:7004
+#        - 127.0.0.1:7005
+#    lettuce:
+#      pool:
+#        max-active: 8
+#        max-wait: -1
+#        min-idle: 0
+#        max-idle: 8
