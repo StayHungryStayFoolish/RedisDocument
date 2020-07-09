@@ -1,6 +1,5 @@
 package io.stayhungrystayfoolish.redisson.resource;
 
-import io.lettuce.core.RedisClient;
 import io.stayhungrystayfoolish.redisson.domain.CallableTask;
 import io.stayhungrystayfoolish.redisson.domain.RunnableTask;
 import io.stayhungrystayfoolish.redisson.domain.User;
@@ -9,9 +8,9 @@ import org.redisson.RedissonNode;
 import org.redisson.api.*;
 import org.redisson.config.Config;
 import org.redisson.config.RedissonNodeConfig;
-import org.redisson.spring.starter.RedissonAutoConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequestMapping("/api")
 public class RedissonResource {
 
+    private final Logger logger = LoggerFactory.getLogger(RedissonResource.class);
+
     private final RedissonClient client;
 
     private final RedisTemplate template;
@@ -41,7 +42,7 @@ public class RedissonResource {
     }
 
     @GetMapping("/add")
-    public User redisssonAdd() {
+    public User redissonAdd() {
         User user = new User("boni", 20);
         RBucket<User> bucket = client.getBucket("k1");
         bucket.set(user);
@@ -49,53 +50,90 @@ public class RedissonResource {
     }
 
     @GetMapping("/lock")
-    public void templateAdd() {
+    public void testLock() {
+        RLock lock = client.getLock("lock");
+        boolean b = false;
+        try {
+            b = lock.tryLock();
+            if (b) {
+                Thread.sleep(60000l);
+                logger.info("Successfully acquired Lock.");
+            }
+        } catch (Exception e) {
+            logger.error("Failed to acquired Lock.");
+            e.printStackTrace();
+        } finally {
+            if (b) {
+                lock.unlock();
+                logger.info("Unlocked successfully.");
+            }
+        }
+    }
+
+    @GetMapping("/reentrantLock")
+    public void testReentrantLock() {
         ExecutorService service = Executors.newFixedThreadPool(10);
         AtomicInteger success = new AtomicInteger();
         AtomicInteger failed = new AtomicInteger();
         for (int i = 0; i < 10; i++) {
             service.execute(() -> {
-                RLock lock = client.getLock("lock-test");
+                RLock lock = client.getLock("reentrant-lock");
                 try {
-                    boolean res = lock.tryLock(30, 10, TimeUnit.SECONDS);
-                    if (res) {
-                        System.out.println("获取锁成功 " + success.incrementAndGet() + " 次");
+                    boolean b = lock.tryLock(30, 10, TimeUnit.SECONDS);
+                    if (b) {
+                        logger.info("Successfully acquired Lock " + success.incrementAndGet() + "count.");
+                        reentrant();
                     }
                 } catch (Exception e) {
-                    System.out.println("获取锁失败 " + failed.incrementAndGet() + " 次");
+                    logger.error("Failed to acquired Lock " + failed.incrementAndGet() + "count.");
                     e.printStackTrace();
                 } finally {
                     lock.unlock();
+                    logger.info("Unlocked successfully.");
                 }
             });
         }
         service.shutdown();
     }
 
-    static AtomicInteger success = new AtomicInteger();
-    static AtomicInteger failed = new AtomicInteger();
-
-    @GetMapping("/executor")
-    public void executor() {
-        RExecutorService service = client.getExecutorService("task");
-        service.submit(new TaskTest());
-        service.shutdown();
+    private void reentrant() {
+        RLock lock = client.getLock("reentrant-lock");
+        AtomicInteger success = new AtomicInteger();
+        AtomicInteger failed = new AtomicInteger();
+        try {
+            boolean res = lock.tryLock(30, 10, TimeUnit.SECONDS);
+            if (res) {
+                logger.info("Successfully acquired Reentrant Lock " + success.incrementAndGet() + " count.");
+            }
+        } catch (Exception e) {
+            logger.error("Failed to acquire Reentrant Lock " + failed.incrementAndGet() + " count.");
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+            logger.info("Unlocked Reentrant Lock successfully.");
+        }
     }
 
+
     public static class TaskTest implements Runnable, Serializable {
+
+        private final Logger logger = LoggerFactory.getLogger(TaskTest.class);
+
+        static AtomicInteger success = new AtomicInteger();
+        static AtomicInteger failed = new AtomicInteger();
 
         @Autowired
         private RedissonClient client;
 
         @Override
         public void run() {
-            RBucket<String> bucket = client.getBucket("bucket");
-            bucket.set("kkkkkkkkkkkkkkkkkkkkkkk");
-            System.out.println("=================" + bucket.get());
             RLock lock = client.getLock("lock-test");
             try {
                 boolean res = lock.tryLock(30, 10, TimeUnit.SECONDS);
                 if (res) {
+                    RBucket<String> bucket = client.getBucket("bucket");
+                    bucket.set("kkkkkkkkkkkkkkkkkkkkkkk");
+                    logger.info("=================" + bucket.get());
                     System.out.println("获取锁成功 " + success.incrementAndGet() + " 次");
                 }
             } catch (Exception e) {
@@ -126,7 +164,6 @@ public class RedissonResource {
                 .setAddress("redis://127.0.0.1:6379")
                 .setConnectionMinimumIdleSize(1)
                 .setConnectionPoolSize(2);
-
 
 
         final RedissonNodeConfig nodeConfig = new RedissonNodeConfig(config);

@@ -34,6 +34,19 @@
             <artifactId>redisson-spring-boot-starter</artifactId>
             <version>3.13.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>3.13.1</version>
+        </dependency>
+        <!-- 解决 redisson.yml codec 配置异常，不要更换高版本，会有别的异常 -->
+        <!-- Caused by: java.lang.ClassNotFoundException: org.nustaq.serialization.FSTConfiguration -->
+        <dependency>
+            <groupId>de.ruedigermoeller</groupId>
+            <artifactId>fst</artifactId>
+            <version>2.47</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

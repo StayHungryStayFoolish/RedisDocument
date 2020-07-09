@@ -17,5 +17,5 @@ singleServerConfig:
 threads: 16
 nettyThreads: 32
 transportMode: "NIO"
-#codec: !<org.redisson.codec.FstCodec> {}
+codec: !<org.redisson.codec.FstCodec> {} # maven -> de.ruedigermoeller.fst [version-2.47]
 
