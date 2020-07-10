@@ -23,7 +23,7 @@ public class RunnableTask implements Runnable, Serializable {
         System.out.println("=================>" + instant.toString());
         System.out.println("JOB A started!!!!!!!!!!");
         try {
-            Thread.sleep(10000);
+            Thread.sleep(100);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
