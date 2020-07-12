@@ -1,8 +1,8 @@
 package io.stayhungrystayfoolish.redisson.resource;
 
-import io.stayhungrystayfoolish.redisson.domain.CallableTask;
-import io.stayhungrystayfoolish.redisson.domain.RunnableTask;
 import io.stayhungrystayfoolish.redisson.domain.User;
+import io.stayhungrystayfoolish.redisson.executor.CallableTask;
+import io.stayhungrystayfoolish.redisson.executor.RunnableTask;
 import org.redisson.Redisson;
 import org.redisson.RedissonNode;
 import org.redisson.api.*;
@@ -145,26 +145,12 @@ public class RedissonResource {
         }
     }
 
-    @GetMapping("/test")
-    public void task() {
-        ExecutorOptions options = ExecutorOptions.defaults();
-        // 指定重新尝试执行任务的时间间隔。
-        // ExecutorService的工作节点将等待10分钟后重新尝试执行任务
-        // 指定重新尝试执行任务的时间间隔。
-        // ExecutorService的工作节点将等待10分钟后重新尝试执行任务
-        // 默认值为5分钟
-        options.taskRetryInterval(30, TimeUnit.SECONDS);
-        RExecutorService executorService = client.getExecutorService("myExecutor", options);
-        executorService.submit(new RunnableTask(123));
-    }
-
     public static void main(final String[] args) throws InterruptedException, ExecutionException {
         final Config config = new Config();
         config.useSingleServer()
                 .setAddress("redis://127.0.0.1:6379")
                 .setConnectionMinimumIdleSize(1)
                 .setConnectionPoolSize(2);
-
 
         final RedissonNodeConfig nodeConfig = new RedissonNodeConfig(config);
         nodeConfig.setExecutorServiceWorkers(Collections.singletonMap("myExecutor", 1));
@@ -186,7 +172,6 @@ public class RedissonResource {
         final Future<String> result = e.submit(new CallableTask());
         System.out.println("result = " + result.get());
         e.shutdown();
-
         node.shutdown();
     }
 }

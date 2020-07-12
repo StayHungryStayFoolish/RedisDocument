@@ -1,4 +1,4 @@
-package io.stayhungrystayfoolish.redisson.executor;
+package io.stayhungrystayfoolish.jedis.executor;
 
 import org.redisson.api.RMap;
 import org.redisson.api.RedissonClient;
@@ -17,14 +17,14 @@ public class CallableTask implements Callable<String>, Serializable {
     public String call() {
         final RMap<String, String> map = redisson.getMap("taskMap");
         Instant instant = Instant.now();
-        map.put("Redisson Client Callable : " + instant.toString(), instant.toString());
-        System.out.println("Redisson Client Callable Task A started !");
+        map.put("Jedis Client Callable : " + instant.toString(), instant.toString());
+        System.out.println("Jedis Client Callable Task A started !");
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("Redisson Client Callable Task A finished !");
-        return "Redisson Client Callable Task A finished !";
+        System.out.println("Jedis Client Callable Task A finished !");
+        return "Jedis Client Callable Task A finished !";
     }
 }

@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.redisson.config.Config;
+import org.redisson.config.RedissonNodeConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -22,6 +24,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.io.IOException;
+
 /**
  * @Author: Created by bonismo@hotmail.com on 2020/7/8 3:01 下午
  * @Description:
@@ -34,6 +38,12 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedissonConfiguration {
 
     private final Logger logger = LoggerFactory.getLogger(RedissonConfiguration.class);
+
+    @Bean
+    public RedissonNodeConfig redissonNodeConfig() throws IOException {
+        Config config = Config.fromYAML(this.getClass().getClassLoader().getResource("redisson.yml"));
+        return new RedissonNodeConfig(config);
+    }
 
     @Bean
     @Primary
