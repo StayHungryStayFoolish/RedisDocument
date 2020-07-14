@@ -49,6 +49,23 @@ public class RedissonResource {
         return bucket.get();
     }
 
+    @GetMapping("/bloom")
+    public boolean bloom() {
+        RBloomFilter<String> filter = client.getBloomFilter("bloom");
+        // 初始化布隆过滤器，预计统计元素数量为55000000，期望误差率为0.03
+        filter.tryInit(55000000L, 0.03);
+        filter.add("k1");
+        filter.add("k2");
+        filter.add("k3");
+        filter.add("k4");
+        filter.add("k4");
+        long size = filter.getSize();
+        long count = filter.count();
+        System.out.println(size);
+        System.out.println(count);
+       return filter.contains("k2");
+    }
+
     @GetMapping("/lock")
     public void testLock() {
         RLock lock = client.getLock("lock");
